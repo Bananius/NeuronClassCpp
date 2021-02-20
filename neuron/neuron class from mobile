@@ -1,0 +1,45 @@
+#include<iostream>
+#include<math.h>
+#include <stdlib.h>
+#include <iomanip>
+#include <ctime>
+#define N 9
+using namespace std;
+
+float sigmoid(float x){
+    return 1 / (1 - exp(-x));
+}
+
+class Neuron
+{
+    public:
+        Neuron(float *x){
+        cout << sizeof(x) << endl;
+            weights = (float*)malloc(sizeof(x) / (sizeof(*x));
+            for(int i = 0; i < sizeof(x); i++){
+                *weights = *x;
+                cout << *weights << "  " << *x << endl;
+                *weights++;
+                *x++;
+            }
+        }
+        
+        ~Neuron();
+    
+        float* getweights() {
+            return weights;
+        }
+    
+    //private:
+        float *weights;
+};
+
+int main()
+{
+    cout << sigmoid(1) << endl;
+    
+    float w[3] = {0.5, 0.7, 1.2};
+    Neuron *n = new Neuron(w);
+    //cout << n->weights[0];
+    return 0;
+}
