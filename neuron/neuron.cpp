@@ -1,91 +1,157 @@
-﻿#include<iostream>
-#include<math.h>
+﻿#include <iostream>
+#include <math.h>
 #include <stdlib.h>
 #include <iomanip>
-#include <clocale>
-using namespace std;
+#include <ctime>
+#include <vector>
 
-double sigmoid(double x) {
-    return 1 / (1 - exp(-x));
-}
+#include "ActFunc.h"
+
+#define N 9
+#define newline cout<<endl
+using namespace std;
+using namespace ActFunc;
 
 class Neuron
 {
-public:
-    Neuron(double* x, int n, double (*activation)(double) = (*sigmoid)) {
-        this->setweights(x, n);
-        this->activationFunc = activation;
-    }
-    ~Neuron() {
-        delete[] weights;
-    }
+    public:
+        Neuron(double* x, int n,
+            double (*activation)(double) = (*sigmoid),
+            double (*activationprime)(double) = (*sigmoidprime)) {
 
-    double(*activationFunc)(double);
-    double getweight(int i) {
-        return this->weights[i];
-    }
-    void setweights(double* x, int n) {
-        Nw = n;
-        if (weights == nullptr) {
-            weights = new double[n];
-        }
-        else {
-            delete[] weights;
-            weights = new double[n];
+            this->activationFunc = activation;
+            this->activationprimeFunc = activationprime;
+            this->setweights(x, n);
         }
 
-        double* ptr = weights;
-        for (int i = 0; i < Nw; i++) {
-            *(ptr++) = *(x++);
+        Neuron(std::vector<double> x,
+            double (*activation)(double) = (*sigmoid),
+            double (*activationprime)(double) = (*sigmoidprime)) {
+
+            this->activationFunc = activation;
+            this->activationprimeFunc = activationprime;
+            this->setweights(x);
         }
-    }
-    int getsize() {
-        return this->Nw;
-    }
 
-    double getactivation(int i) {
-        return this->activationFunc(this->weights[i]);
-    }
+        ~Neuron() {}
 
-    private:
-        double* weights = nullptr;
-        int Nw;
+        double getweight(int i) {
+            return this->weights[i];
+        }
+
+        void setweights(double* w, int n) {
+            double* ptr = w;
+            for (int i = 0; i < n; i++) {
+                weights.push_back(*(ptr++));
+            }
+        }
+
+        void setweights(std::vector<double> x) {
+            weights = x;
+        }
+
+        int summatory(double* inputvector, int sizeH) {
+            if (sizeH != weights.size()) {
+                return 0;
+            }
+
+            double scalarS = 0;
+            for (int i = 0; i < sizeH; i++) {
+                scalarS += inputvector[i] * weights[i];
+            }
+            this->summ = scalarS;
+            return 1;
+        }
+
+        bool summatory(std::vector<double> inputvector) {
+            if (inputvector.size() != weights.size()) {
+                return 0;
+            }
+
+            double scalarS = 0;
+            for (int i = 0; i < inputvector.size(); i++) {
+                scalarS += inputvector[i] * weights[i];
+            }
+            this->summ = scalarS;
+            return 1;
+        }
+
+        double output_activation(std::vector<double> inputvector) {
+            if (this->summatory(inputvector)) {
+                this->activate = this->activationFunc(this->summ);
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+
+        double output_activation(double* inputvector, int sizeH) {
+            if (this->summatory(inputvector, sizeH)) {
+                this->activate = this->activationFunc(this->summ);
+                return 1;
+            }
+            else {
+                return 0;
+            }
+        }
+
+    //private:
+        double (*activationFunc)(double);
+        double (*activationprimeFunc)(double);
+        std::vector<double> weights;
+        double summ;
+        double activate;
 };
 
 int main()
 {
-    setlocale(LC_CTYPE, "rus"); // вызов функции настройки локали
 
-    double w[5] = { 0.5, 0.7, 1.2, 0.7, 1.2 };
-    cout << "Содержимое массива весов w..." << endl;
-    for (int i = 0; i < sizeof(w)/sizeof(double); i++) {
-        cout << w[i] << " ";
-    }
-    cout << endl << endl;
-    
+    double w[3] = { 1.5, -0.7, -1.2 };
+    std::vector<double> w2 = { 0.1, -0.2, -0.3 };
 
-    cout << "Создаем объект класса Neuron: n, и загружаем в него веса w. Функция активации по умолчанию - sigmoid." << endl;
+    double xm[3] = { 1.1, 2.0, 3.0 };
+    std::vector<double> xv = { 1.1, 2.0, 1.0 };
+    std::vector<double> xv2 = { 1.1, 2.0, 3.0, 4.0 };
+
     Neuron* n = new Neuron(w, sizeof(w) / sizeof(double));
-    cout << "Выводим содержимое поля weights при помощи соответсвующего метода getweight..." << endl;
-    for (int i = 0; i < n->getsize(); i++) {
-        cout << n->getweight(i) << " ";
-    }
-    cout << endl << endl;
+    //for (int i = 0; i < n->weights.size(); i++) {
+    //    cout << n->weights[i] << " ";
+    //}
 
-    cout << "Выводим содержимое поля weights с применением активационной функции..." << endl;
-    for (int i = 0; i < n->getsize(); i++) {
-        cout << n->getactivation(i) << " ";
+    newline;
+    if (n->output_activation(xv)) {
+        cout << "Summatory result:  " << n->summ;
+        newline;
+        cout << "Activation result:  " << n->activate;
     }
-    cout << endl << endl;
-
-    cout << "Меняем содержимое поля weights и выводим новое содержимое..." << endl;
-    double w2[10] = { 0.333, 0.7, 1.2, 0.7, 1.2, 0.5, 0.7, 1.2, 0.7, 1.2 };
-    n->setweights(w2, sizeof(w2) / sizeof(double));
-    
-    for (int i = 0; i < n->getsize(); i++) {
-        cout << n->getweight(i) << " ";
+    else {
+        cout << "ERROR";
     }
-    cout << endl << endl;
 
-    return 0;  // завершение программы
+    newline;
+    newline;
+
+    if (n->output_activation(xv2)) {
+        cout << "Activation result:  " << n->activate;
+    }
+    else {
+        cout << "ERROR";
+    }
+    newline;
+    newline;
+
+    Neuron* n2 = new Neuron(w2, ActFunc::tanh, tanhprime);
+    if (n2->output_activation(xv)) {
+        cout << "Summatory result:  " << n2->summ;
+        newline;
+        cout << "Activation result:  " << n2->activate;
+    }
+    else {
+        cout << "ERROR";
+    }
+    newline;
+    newline;
+
+    return 0;
 }
